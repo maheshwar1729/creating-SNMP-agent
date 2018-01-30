@@ -1,0 +1,43 @@
+#!/usr/bin/perl
+use NetSNMP::agent (':all');
+use NetSNMP::ASN;  
+use NetSNMP::OID;  
+my $agent = new NetSNMP::agent();
+$agent->register("maheshwar", "1.3.6.1.4.1.4171.40", \&my_handler);
+sub my_handler
+{
+my ($handler, $registration_info, $request_info, $requests) = @_;
+my $request;
+my $ut = time();
+$filename = '/tmp/A1/counters.conf';
+open(FILE,$filename);
+for(<FILE>)
+{
+@a = split(',', $_);
+$j=$a[0];
+$k=$a[1];
+%d=($j,$k,);
+for($request = $requests; $request; $request = $request->next()) 
+{
+my $obj_id = $request->getOID();
+my @obj_id_array = split/[.]/,$obj_id;
+my $last_obj_id = $obj_id_array[-1];
+if ($request_info->getMode() == MODE_GET)
+{
+if ($obj_id == new NetSNMP::OID("1.3.6.1.4.1.4171.40.1")) 
+{
+$request->setValue(ASN_COUNTER,time);
+}
+   elsif ($obj_id > new NetSNMP::OID("1.3.6.1.4.1.4171.40.1"))
+{
+my $n = $last_obj_id-1;
+if(exists($d{$n}))
+{
+$ctime = $d{$n} * $ut;
+$request->setValue(ASN_COUNTER,$ctime);
+}
+}
+}
+}
+}
+}
